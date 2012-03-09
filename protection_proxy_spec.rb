@@ -1,4 +1,5 @@
 require 'rspec/given'
+require 'gimme'
 require 'protection_proxy'
 
 describe ProtectionProxy do
@@ -9,6 +10,12 @@ describe ProtectionProxy do
       @name = name
       @email = email
       @membership_level = membership_level
+    end
+
+    def update_attributes(attrs)
+      attrs.each do |attr, value|
+        send("#{attr}=", value)
+      end
     end
   end
 
@@ -38,6 +45,18 @@ describe ProtectionProxy do
       When { proxy.name = "Joe" }
       Then { proxy.name.should == "Jim" }
     end
+
+    context "when I use update attributes" do
+      When { proxy.update_attributes(name: "Joe", membership_level: "Advanced") }
+      Then { proxy.name.should == "Jim" }
+      Then { proxy.membership_level.should == "Advanced" }
+    end
+
+    describe "the interaction with the original update_attributes" do
+      Given(:user) { gimme(User) }
+      When { proxy.update_attributes(name: "Joe", membership_level: "Advanced") }
+      Then { verify(user).update_attributes(membership_level: "Advanced") }
+    end
   end
 
   context "when user the browser role" do
@@ -53,6 +72,18 @@ describe ProtectionProxy do
     context "when I change a protected attribute" do
       When { proxy.membership_level = "SuperUser" }
       Then { proxy.membership_level.should == "Beginner" }
+    end
+
+    context "when I use update attributes" do
+      When { proxy.update_attributes(name: "Joe", membership_level: "Advanced") }
+      Then { proxy.name.should == "Joe" }
+      Then { proxy.membership_level.should == "Beginner" }
+    end
+
+    describe "the interaction with the original update_attributes" do
+      Given(:user) { gimme(User) }
+      When { proxy.update_attributes(name: "Joe", membership_level: "Advanced") }
+      Then { verify(user).update_attributes(name: "Joe") }
     end
   end
 

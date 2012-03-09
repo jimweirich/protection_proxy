@@ -25,6 +25,14 @@ class ProtectionProxy
     @writable_fields = writable_fields
   end
 
+  def update_attributes(attribute_values)
+    safe_attributes = {}
+    attribute_values.each do |attribute, value|
+      safe_attributes[attribute] = value if @writable_fields.include?(attribute.to_sym)
+    end
+    @object.update_attributes(safe_attributes)
+  end
+
   def method_missing(sym, *args, &block)
     method_name = sym.to_s
     if ! method_name.end_with?("=")
